@@ -1,0 +1,42 @@
+# Python Bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Datasets and archives (too large for GitHub)
+data/
+PlantVillage-Dataset/
+plantvillage.zip
+*.zip
+*.tar.gz
+*.rar
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+id_rsa
+kaggle.json
+client_secret*.json
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files and logs
+temp/
+tmp/
+*.tmp
+*.log
