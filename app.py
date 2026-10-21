@@ -165,6 +165,26 @@ if input_image is not None:
 
             # Actionable Treatment & Agronomic Solutions
             st.markdown("---")
+            
+            # Quantitative Disease Severity Staging Section
+            st.subheader("📏 Quantitative Disease Severity Staging (Infected Leaf Area)")
+            sev = diagnosis.get('severity')
+            if sev and not sev.get('is_healthy', False):
+                col_s1, col_s2, col_s3 = st.columns([1, 1, 2])
+                with col_s1:
+                    st.metric(label="Infected Surface Area", value=f"{sev['severity_pct']}%")
+                with col_s2:
+                    st.metric(label="Agronomic Severity Stage", value=f"Stage {sev['stage_number']}")
+                with col_s3:
+                    st.write(f"**Classification:** {sev['stage_name']}")
+                    st.write(f"**Epidemiological Risk:** {sev['risk_level']}")
+                
+                st.progress(min(1.0, max(0.0, sev['severity_pct'] / 100.0)), text=f"Lesion Surface Coverage: {sev['severity_pct']}% of leaf tissue")
+                st.warning(f"**🔬 Staging Action Plan:** {sev['action_plan']}")
+            else:
+                st.success("### 🌿 0% Necrotic Lesion Area (Stage 0: Pristine Foliage)\nNo active pathological lesions or chlorotic spread detected.")
+
+            st.markdown("---")
             st.subheader("💊 Actionable Treatment & Crop Management Plan")
             
             t_col1, t_col2 = st.columns(2, gap="medium")

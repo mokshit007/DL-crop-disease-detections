@@ -50,7 +50,17 @@ def generate_pdf_report(original_img: Image.Image, gradcam_img: Image.Image, dia
     pdf.set_font('Arial', 'B', 12)
     pdf.set_text_color(0, 100, 0)
     pdf.cell(0, 9, f" Diagnosis: {treatment['disease']}  (Confidence: {top_pred['confidence']:.1f}%)", 1, 1, fill=True)
-    pdf.ln(3)
+    pdf.ln(2)
+    
+    # Quantitative Severity Staging Box
+    if 'severity' in diagnosis_data and not diagnosis_data['severity'].get('is_healthy', False):
+        sev = diagnosis_data['severity']
+        pdf.set_fill_color(254, 243, 199)
+        pdf.set_draw_color(217, 119, 6)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.set_text_color(180, 83, 9)
+        pdf.cell(0, 7, f" Infection Staging: {sev['stage_name']} | Infected Leaf Area: {sev['severity_pct']}%", 1, 1, fill=True)
+        pdf.ln(2)
     
     pdf.set_font('Arial', '', 10)
     pdf.set_text_color(40, 40, 40)

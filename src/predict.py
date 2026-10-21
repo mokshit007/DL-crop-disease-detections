@@ -9,6 +9,7 @@ import cv2
 from src.model import get_model
 from src.treatments import get_treatment_details
 from src.gradcam import GradCAM
+from src.severity import SeverityEngine
 
 class CropDiseasePredictor:
     def __init__(self, model_path='models/best_model.pth', class_names_path='class_names.json'):
@@ -149,6 +150,24 @@ class CropDiseasePredictor:
             print(f"Grad-CAM generation error: {e}")
             gradcam_image = pil_image
             
+        # Quantitative Disease Severity Staging (% Leaf Surface Area)
+        try:
+            severity_info = SeverityEngine.calculate_severity(pil_image, cam_map, best_class)
+        except Exception as e:
+            print(f"Severity calculation error: {e}")
+            severity_info = {
+                "is_healthy": "healthy" in best_class.lower(),
+                "severity_pct": 0.0,
+                "stage_number": 0,
+                "stage_name": "Stage 0: Unspecified",
+                "stage_badge": "N/A",
+                "risk_level": "Undetermined",
+                "action_plan": "Follow standard treatment guidelines.",
+                "color_hex": "#10B981",
+                "leaf_pixels": 0,
+                "lesion_pixels": 0
+            }
+
         # Get structured treatment data
         treatment_info = get_treatment_details(best_class)
         
@@ -158,6 +177,7 @@ class CropDiseasePredictor:
             'validity_message': validity_msg,
             'top_predictions': top_predictions,
             'treatment': treatment_info,
+            'severity': severity_info,
             'gradcam_image': gradcam_image,
             'original_image': pil_image
         }
