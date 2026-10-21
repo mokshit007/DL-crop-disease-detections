@@ -71,7 +71,7 @@ def create_deck():
     s1 = prs.slides.add_slide(blank_layout)
     set_bg(s1, DARK_BG)
     
-    banner = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(0.8), Inches(2.3), Inches(0.35))
+    banner = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(0.8), Inches(2.6), Inches(0.35))
     banner.fill.solid()
     banner.fill.fore_color.rgb = PRIMARY_GREEN
     banner.line.fill.background()
@@ -131,42 +131,48 @@ def create_deck():
     pf.font.color.rgb = RGBColor(148, 163, 184)
 
     # ==============================================================
-    # SLIDE 2: THE PROBLEM & WHY PREVIOUS MODELS FALL SHORT
+    # SLIDE 2: CORE RESEARCH NOVELTY (DEDICATED 3 PILLARS SLIDE)
     # ==============================================================
     s2 = prs.slides.add_slide(blank_layout)
     set_bg(s2, LIGHT_BG)
-    add_header(s2, "Context & Problem Definition", "Why Existing Deep Learning Crop Models Fall Short")
+    add_header(s2, "Core Research Novelty", "Beyond Stock Models: 3 Tangible Engineering Innovations")
     
-    cards_s2 = [
-        ("01. The 'Black Box' Trap", 
-         "Standard CNNs (ResNet, VGG) output a blind class label without visual justification.\n\nGrowers and agronomists cannot verify whether the network identified true fungal lesions or simply memorized background lighting.", 
-         RGBColor(239, 246, 255), ACCENT_BLUE),
-        ("02. Closed-World Failure on Dirty Data", 
-         "Existing models assume every uploaded image is a clean, single leaf.\n\nWhen farmers upload random photos (documents, screens) or cluttered tree branches with multiple leaves, standard models fail silently with high-confidence false predictions.", 
+    pillars_s2 = [
+        ("01. Novel Dual-Attention Hybrid\n(EfficientNetV2-CBAM)", 
+         "• NOT a Stock Off-The-Shelf Model:\nEngineered a custom hybrid architecture combining EfficientNetV2's Fused-MBConv stages with a dual-attention CBAM module.\n\n"
+         "• Mathematical Formulation:\nMc(F) Channel Attention + Ms(F) Spatial Attention with residual bypass.\n\n"
+         "• Targeted Pathology Focus:\nSpecifically forces the network to calculate 2D spatial attention weights over irregular necrotic lesions, rust pustules, and fungal halos, rather than looking at background leaf wax.", 
+         RGBColor(238, 242, 255), ACCENT_BLUE),
+        ("02. Two-Stage Cascaded Pipeline\n(Solves Closed-World Flaw)", 
+         "• Overcoming the 'Closed-World Fallacy':\nAlmost every published crop disease model hallucinates with 90% confidence when a user uploads a document, screenshot, or cluttered branch with 10 overlapping leaves.\n\n"
+         "• Stage 1 (Adaptive Morphological Gatekeeper):\nRuns HSV vegetation filtering & morphological contour clustering to reject non-plant images and multi-leaf clusters BEFORE the neural network sees them.\n\n"
+         "• Stage 2 (Deep Attention Pathology Classifier):\nExecutes strictly on validated single-leaf specimens.", 
          RGBColor(254, 243, 199), WARNING_AMBER),
-        ("03. Lack of Real-World Actionability", 
-         "Classification without prescription provides zero practical utility to farmers.\n\nAgricultural diagnosis requires pathogen identification (fungus/bacteria/virus), organic remedies, and chemical spray guidance.", 
-         RGBColor(254, 242, 242), ALERT_RED)
+        ("03. Full Agronomic Actionability\n(Prescription Engine)", 
+         "• Beyond Raw Classification Labels:\nOutputting a label alone does not help a grower. We connect every diagnosis directly to its biological pathogen (Fungus / Bacteria / Virus / Pest).\n\n"
+         "• Dual-Track Prescriptions:\nProvides immediate Organic & Biological solutions (Neem oil, Bacillus subtilis, canopy aeration) alongside Chemical controls (Mancozeb, Chlorothalonil).\n\n"
+         "• One-Click Diagnostic PDF Reports:\nAutomated print-ready field reports.", 
+         RGBColor(240, 253, 244), PRIMARY_GREEN)
     ]
-    for i, (title, body, bg, border) in enumerate(cards_s2):
+    for i, (title, body, bg, border) in enumerate(pillars_s2):
         cx = 0.8 + i * 3.95
         create_card(s2, cx, 1.5, 3.75, 5.3, bg, border)
         
-        cbox = s2.shapes.add_textbox(Inches(cx + 0.25), Inches(1.75), Inches(3.25), Inches(4.8))
+        cbox = s2.shapes.add_textbox(Inches(cx + 0.2), Inches(1.68), Inches(3.35), Inches(4.9))
         tf = cbox.text_frame
         tf.word_wrap = True
         
         pt = tf.paragraphs[0]
         pt.text = title
-        pt.font.size = Pt(15)
+        pt.font.size = Pt(13.5)
         pt.font.bold = True
         pt.font.color.rgb = border
         
         pb = tf.add_paragraph()
         pb.text = body
-        pb.font.size = Pt(11)
+        pb.font.size = Pt(9.5)
         pb.font.color.rgb = TEXT_DARK
-        pb.space_before = Pt(14)
+        pb.space_before = Pt(8)
 
     # ==============================================================
     # SLIDE 3: DATASET PIPELINE & SCALE
@@ -308,20 +314,18 @@ def create_deck():
                 pi.space_before = Pt(1)
 
     # ==============================================================
-    # SLIDE 5: EMPIRICAL BENCHMARK COMPARISON TABLE (CRITICAL COUNTER)
+    # SLIDE 5: EMPIRICAL BENCHMARK COMPARISON TABLE
     # ==============================================================
     s5 = prs.slides.add_slide(blank_layout)
     set_bg(s5, LIGHT_BG)
     add_header(s5, "Empirical Validation & Baselines", "Benchmarking Our Architecture Against Standard Models")
     
-    # Left: Embed Efficiency Chart
     eff_chart_path = 'results/model_efficiency_benchmark.png'
     if os.path.exists(eff_chart_path):
         s5.shapes.add_picture(eff_chart_path, Inches(0.8), Inches(1.5), Inches(6.8), Inches(5.3))
     else:
         create_card(s5, 0.8, 1.5, 6.8, 5.3, CARD_BG, CARD_BORDER)
 
-    # Right: Benchmark Cards / Comparison Table
     bench_data = [
         ("ResNet-50 (Industry Standard)", "23.59M Params | 4.12G FLOPs | GPU: 10.6ms", "Top-1 Acc: 97.4% (Literature Benchmark)\nHeavy parameter overhead and slower convergence on micro-lesions.", CARD_BG, TEXT_MUTED),
         ("MobileNetV3-Large (Mobile Baseline)", "4.25M Params | 0.44G FLOPs | GPU: 11.5ms", "Top-1 Acc: 96.8% (Literature Benchmark)\nFastest latency, but sacrifices representation depth on fine foliar spots.", CARD_BG, TEXT_MUTED),
@@ -360,7 +364,7 @@ def create_deck():
     # ==============================================================
     s6 = prs.slides.add_slide(blank_layout)
     set_bg(s6, LIGHT_BG)
-    add_header(s6, "Architectural Novelty", "Dual-Attention Enhancement: Integrating CBAM on EfficientNetV2")
+    add_header(s6, "Architectural Novelty", "Dual-Attention Hybrid: EfficientNetV2-CBAM Lesion Localization")
     
     cbam_cards = [
         ("1. Channel Attention: Mc(F)", 
@@ -371,7 +375,7 @@ def create_deck():
         ("2. Spatial Attention: Ms(F)", 
          "Mathematical Formulation:\nMs(F) = σ(f7x7([AvgPool(F); MaxPool(F)]))\n\n"
          "Mechanism & Purpose:\nApplies inter-channel pooling followed by a 7x7 spatial convolution to produce a 2D lesion probability mask. "
-         "Guides the network to focus on the exact geometric coordinates of concentric bullseye rings and irregular scorch margins.", 
+         "Forces the network to calculate 2D spatial attention weights over irregular necrotic lesions, rust pustules, and fungal halos rather than background leaf wax.", 
          ACCENT_BLUE),
         ("3. Residual Integration: F'' + F", 
          "End-to-End Synergy:\nF' = Mc(F) ⊗ F\nF'' = Ms(F') ⊗ F'\nOutput = F + F''\n\n"
@@ -394,7 +398,7 @@ def create_deck():
         
         pd = tf.add_paragraph()
         pd.text = d
-        pd.font.size = Pt(10.5)
+        pd.font.size = Pt(10)
         pd.font.color.rgb = TEXT_DARK
         pd.space_before = Pt(12)
 
@@ -405,7 +409,6 @@ def create_deck():
     set_bg(s7, LIGHT_BG)
     add_header(s7, "Detailed Network Specs", "EfficientNetV2-CBAM: Layer, Filter, Padding & Parameter Blueprint")
     
-    # Left: Parameter & Global Specs Card
     create_card(s7, 0.8, 1.5, 3.6, 5.3, RGBColor(240, 253, 244), PRIMARY_GREEN)
     tb_spec = s7.shapes.add_textbox(Inches(1.0), Inches(1.7), Inches(3.2), Inches(4.8))
     tf_sp = tb_spec.text_frame
@@ -582,7 +585,7 @@ def create_deck():
 
     stress_cards = [
         ("Clean Lab Baseline: 100.0%", 
-         "Perfect diagnosis on standard isolated leaves without ambient noise.", PRIMARY_GREEN),
+         "Perfect diagnosis on standard isolated leaves under controlled lighting.", PRIMARY_GREEN),
         ("Motion Blur (Wind/Shaking): 86.3%", 
          "Simulates handheld smartphone blur when taking photos in windy crop fields. Model retains strong lesion recognition without collapsing.", ACCENT_BLUE),
         ("Gaussian Noise (Low Light): 80.8%", 
@@ -659,7 +662,7 @@ def create_deck():
     # ==============================================================
     s12 = prs.slides.add_slide(blank_layout)
     set_bg(s12, LIGHT_BG)
-    add_header(s12, "Pipeline Architecture", "Two-Stage Cascaded Deployment: Quality Gatekeeper & Agronomic Engine")
+    add_header(s12, "Pipeline Architecture", "Two-Stage Cascaded Deployment: Solving the Closed-World Flaw")
     
     prod_cards = [
         ("Stage 1A: Non-Plant Rejection", 
@@ -696,7 +699,7 @@ def create_deck():
         pb.space_before = Pt(10)
 
     # ==============================================================
-    # SLIDE 13: WHAT IS GOOD (STRENGTHS)
+    # SLIDE 13: WHAT IS GOOD (KEY STRENGTHS & VALUE)
     # ==============================================================
     s13 = prs.slides.add_slide(blank_layout)
     set_bg(s13, LIGHT_BG)
@@ -853,7 +856,7 @@ def create_deck():
 
     output_filename = "CropSense_AI_Official_Presentation.pptx"
     prs.save(output_filename)
-    print(f"Updated {output_filename} with Full Academic Defense & Benchmark Slides successfully!")
+    print(f"Updated {output_filename} successfully!")
 
 if __name__ == '__main__':
     create_deck()
