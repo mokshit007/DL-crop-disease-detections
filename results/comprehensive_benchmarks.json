@@ -1,0 +1,52 @@
+{
+    "model_benchmarks": [
+        {
+            "model_name": "ResNet-50",
+            "parameters_m": 23.59,
+            "total_parameters": 23585894,
+            "model_size_mb": 90.0,
+            "flops": "4.12 G",
+            "gpu_latency_ms": 10.59,
+            "cpu_latency_ms": 163.08
+        },
+        {
+            "model_name": "MobileNetV3-Large",
+            "parameters_m": 4.25,
+            "total_parameters": 4250710,
+            "model_size_mb": 16.2,
+            "flops": "0.44 G",
+            "gpu_latency_ms": 11.49,
+            "cpu_latency_ms": 44.89
+        },
+        {
+            "model_name": "EfficientNetV2-S (Baseline)",
+            "parameters_m": 20.23,
+            "total_parameters": 20226166,
+            "model_size_mb": 77.2,
+            "flops": "2.86 G",
+            "gpu_latency_ms": 32.12,
+            "cpu_latency_ms": 187.15
+        },
+        {
+            "model_name": "EfficientNetV2-CBAM (Proposed)",
+            "parameters_m": 20.43,
+            "total_parameters": 20431064,
+            "model_size_mb": 77.9,
+            "flops": "2.91 G",
+            "gpu_latency_ms": 33.11,
+            "cpu_latency_ms": 228.24
+        }
+    ],
+    "robustness_stress_test": {
+        "Clean Baseline (Lab Specimen)": 100.0,
+        "Motion Blur (Wind/Shaky Camera)": 86.32,
+        "Gaussian Noise (Low-Light Sensor)": 80.79,
+        "Sun Glare / Overexposure (Field)": 100.0
+    },
+    "literature_accuracy_comparison": {
+        "ResNet-50 (Standard Benchmark)": "97.4%",
+        "MobileNetV3-Large (Mobile Baseline)": "96.8%",
+        "EfficientNetV2-S (Our Baseline)": "99.94%",
+        "EfficientNetV2-CBAM (Our Proposed)": "99.94%"
+    }
+}
