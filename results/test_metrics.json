@@ -1,0 +1,8 @@
+{
+    "test_images": 8810,
+    "test_accuracy": 99.9,
+    "test_macro_f1": 99.9,
+    "leaked_fraction_pct": 67.5,
+    "leaf_disjoint_images": 2861,
+    "leaf_disjoint_accuracy": 99.97
+}

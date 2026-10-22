@@ -1,17 +1,24 @@
 import os
+import shutil
 import tempfile
 from datetime import datetime
 from fpdf import FPDF
 from PIL import Image
 
+def _latin1(text) -> str:
+    """FPDF 1.x core fonts only support Latin-1; drop anything else instead of crashing."""
+    return str(text).encode('latin-1', 'ignore').decode('latin-1')
+
 class PlantHealthPDF(FPDF):
+    model_name = 'EfficientNetV2-S'
+
     def header(self):
         self.set_font('Arial', 'B', 16)
         self.set_text_color(34, 139, 34) # Forest Green
         self.cell(0, 10, 'AI Plant Disease Diagnostic Report', 0, 1, 'C')
         self.set_font('Arial', 'I', 9)
         self.set_text_color(100, 100, 100)
-        self.cell(0, 5, f'Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Model: EfficientNetV2-S', 0, 1, 'C')
+        self.cell(0, 5, f'Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Model: {self.model_name}', 0, 1, 'C')
         self.ln(5)
 
     def footer(self):
@@ -20,14 +27,18 @@ class PlantHealthPDF(FPDF):
         self.set_text_color(150, 150, 150)
         self.cell(0, 10, 'Automated Agronomic Assessment - Powered by SOTA Deep Learning', 0, 0, 'C')
 
-def generate_pdf_report(original_img: Image.Image, gradcam_img: Image.Image, diagnosis_data: dict) -> bytes:
+def generate_pdf_report(original_img: Image.Image, gradcam_img: Image.Image, diagnosis_data: dict, model_name: str = 'EfficientNetV2-S') -> bytes:
     """
     Generates a PDF diagnostic report with side-by-side images and treatment recommendations.
     Returns bytes of the generated PDF file.
     """
     pdf = PlantHealthPDF()
+    pdf.model_name = model_name
     pdf.add_page()
     
+    if gradcam_img is None:
+        gradcam_img = original_img
+
     # Save temporary images for FPDF embedding
     temp_dir = tempfile.mkdtemp()
     orig_path = os.path.join(temp_dir, "orig.jpg")
@@ -42,29 +53,29 @@ def generate_pdf_report(original_img: Image.Image, gradcam_img: Image.Image, dia
     
     pdf.set_font('Arial', 'B', 13)
     pdf.set_text_color(0, 51, 102)
-    pdf.cell(0, 8, f"Target Crop: {treatment['crop']}", 0, 1)
+    pdf.cell(0, 8, _latin1(f"Target Crop: {treatment['crop']}"), 0, 1)
     
     # Diagnosis box
     pdf.set_fill_color(240, 248, 240)
     pdf.set_draw_color(34, 139, 34)
     pdf.set_font('Arial', 'B', 12)
     pdf.set_text_color(0, 100, 0)
-    pdf.cell(0, 9, f" Diagnosis: {treatment['disease']}  (Confidence: {top_pred['confidence']:.1f}%)", 1, 1, fill=True)
+    pdf.cell(0, 9, _latin1(f" Diagnosis: {treatment['disease']}  (Confidence: {top_pred['confidence']:.1f}%)"), 1, 1, fill=True)
     pdf.ln(2)
     
     # Quantitative Severity Staging Box
-    if 'severity' in diagnosis_data and not diagnosis_data['severity'].get('is_healthy', False):
-        sev = diagnosis_data['severity']
+    sev = diagnosis_data.get('severity')
+    if sev and sev.get('available', True) and not sev.get('is_healthy', False):
         pdf.set_fill_color(254, 243, 199)
         pdf.set_draw_color(217, 119, 6)
         pdf.set_font('Arial', 'B', 10)
         pdf.set_text_color(180, 83, 9)
-        pdf.cell(0, 7, f" Infection Staging: {sev['stage_name']} | Infected Leaf Area: {sev['severity_pct']}%", 1, 1, fill=True)
+        pdf.cell(0, 7, _latin1(f" Estimated Severity: {sev['stage_name']} | Infected Leaf Area: {sev['severity_pct']}%"), 1, 1, fill=True)
         pdf.ln(2)
     
     pdf.set_font('Arial', '', 10)
     pdf.set_text_color(40, 40, 40)
-    pdf.cell(0, 6, f"Pathogen Classification: {treatment['pathogen']}", 0, 1)
+    pdf.cell(0, 6, _latin1(f"Pathogen Classification: {treatment['pathogen']}"), 0, 1)
     pdf.ln(2)
     
     # Visual Inspection Images Side-by-Side
@@ -85,9 +96,7 @@ def generate_pdf_report(original_img: Image.Image, gradcam_img: Image.Image, dia
         pdf.cell(0, 6, title, 0, 1)
         pdf.set_font('Arial', '', 9)
         pdf.set_text_color(30, 30, 30)
-        # Safe ASCII cleanup
-        safe_text = text.encode('latin-1', 'ignore').decode('latin-1')
-        pdf.multi_cell(0, 5, safe_text)
+        pdf.multi_cell(0, 5, _latin1(text))
         pdf.ln(2)
         
     add_section("Observed Symptoms:", treatment['symptoms'])
@@ -103,12 +112,6 @@ def generate_pdf_report(original_img: Image.Image, gradcam_img: Image.Image, dia
         pdf_bytes = f.read()
         
     # Cleanup temp files
-    try:
-        os.remove(orig_path)
-        os.remove(cam_path)
-        os.remove(pdf_output_path)
-        os.rmdir(temp_dir)
-    except Exception:
-        pass
-        
+    shutil.rmtree(temp_dir, ignore_errors=True)
+
     return pdf_bytes

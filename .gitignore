@@ -40,3 +40,8 @@ temp/
 tmp/
 *.tmp
 *.log
+models/*_last.pt
+
+# Training run artefacts
+results/ablation_log.txt
+results/ablation_done.txt

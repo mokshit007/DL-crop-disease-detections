@@ -43,10 +43,10 @@
         "Gaussian Noise (Low-Light Sensor)": 80.79,
         "Sun Glare / Overexposure (Field)": 100.0
     },
-    "literature_accuracy_comparison": {
-        "ResNet-50 (Standard Benchmark)": "97.4%",
-        "MobileNetV3-Large (Mobile Baseline)": "96.8%",
-        "EfficientNetV2-S (Our Baseline)": "99.94%",
-        "EfficientNetV2-CBAM (Our Proposed)": "99.94%"
+    "accuracy_comparison": {
+        "ResNet-50": "97.4% (reference value, not trained here)",
+        "MobileNetV3-Large": "96.8% (reference value, not trained here)",
+        "EfficientNetV2-S (Our Baseline)": "99.94% val (measured)",
+        "EfficientNetV2-CBAM (Our Proposed)": "not trained yet (run: python -m src.train --cbam)"
     }
 }

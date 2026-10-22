@@ -6,9 +6,30 @@ class SeverityEngine:
     """
     Automated Quantitative Disease Severity Staging Engine:
     Combines botanical leaf contour segmentation with Grad-CAM feature attention
-    to compute the exact percentage of infected leaf surface area and classify
-    the disease into official USDA/FAO agronomic stages.
+    to estimate the percentage of infected leaf surface area and map it to a
+    4-stage scale (<10%, 10-25%, 25-50%, >50%).
+
+    Note: this is a heuristic proxy. Grad-CAM marks regions that drove the
+    classification, not a pixel-accurate lesion segmentation, and the stage
+    thresholds are project-defined (not an official USDA/FAO standard).
     """
+
+    @staticmethod
+    def unavailable(predicted_class: str):
+        """Result used when no Grad-CAM map is available to estimate severity."""
+        return {
+            "is_healthy": "healthy" in predicted_class.lower(),
+            "available": False,
+            "severity_pct": None,
+            "stage_number": None,
+            "stage_name": "Severity not available",
+            "stage_badge": "N/A",
+            "risk_level": "Undetermined",
+            "action_plan": "Follow the standard treatment guidelines below.",
+            "color_hex": "#64748B",
+            "leaf_pixels": 0,
+            "lesion_pixels": 0
+        }
     
     @staticmethod
     def calculate_severity(pil_image: Image.Image, cam_heatmap: np.ndarray, predicted_class: str):
@@ -24,6 +45,7 @@ class SeverityEngine:
         if "healthy" in predicted_class.lower():
             return {
                 "is_healthy": True,
+                "available": True,
                 "severity_pct": 0.0,
                 "stage_number": 0,
                 "stage_name": "Stage 0: Pristine Foliage",
@@ -77,8 +99,7 @@ class SeverityEngine:
         
         # 4. Severity Index Percentage
         severity_pct = round((lesion_pixel_count / max(1, leaf_pixel_count)) * 100.0, 1)
-        # Cap severity to realistic range for leaf surfaces
-        severity_pct = min(100.0, max(1.5, severity_pct))
+        severity_pct = min(100.0, severity_pct)
         
         # 5. Staging & Agronomic Prescription Mapping
         if severity_pct < 10.0:
@@ -127,6 +148,7 @@ class SeverityEngine:
             
         return {
             "is_healthy": False,
+            "available": True,
             "severity_pct": severity_pct,
             "stage_number": stage_num,
             "stage_name": stage_name,

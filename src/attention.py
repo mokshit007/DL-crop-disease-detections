@@ -67,3 +67,20 @@ class CBAM(nn.Module):
         out = self.channel_attention(x)
         out = self.spatial_attention(out)
         return residual + out
+
+
+class GeM(nn.Module):
+    """
+    Generalized-Mean Pooling with a learnable exponent p:
+        GeM(F) = ( mean(F^p) )^(1/p)
+    p = 1 is average pooling, p -> inf approaches max pooling. Learning p lets the network
+    emphasise small, strongly-activated lesion regions that plain average pooling dilutes.
+    """
+    def __init__(self, p=3.0, eps=1e-6):
+        super(GeM, self).__init__()
+        self.p = nn.Parameter(torch.ones(1) * p)
+        self.eps = eps
+
+    def forward(self, x):
+        p = self.p.clamp(min=1.0)
+        return F.adaptive_avg_pool2d(x.float().clamp(min=self.eps).pow(p), 1).pow(1.0 / p).to(x.dtype)
