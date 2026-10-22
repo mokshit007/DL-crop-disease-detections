@@ -3,7 +3,7 @@ import streamlit as st
 from PIL import Image
 import pandas as pd
 
-from src.predict import CropDiseasePredictor
+from src.predict import CropDiseasePredictor, DEFAULT_MODEL_PATH, DEFAULT_ARCH
 from src.report_generator import generate_pdf_report
 
 st.set_page_config(
@@ -45,7 +45,7 @@ st.markdown("""
 
 @st.cache_resource
 def load_predictor():
-    if not os.path.exists('models/best_model.pth') or not os.path.exists('class_names.json'):
+    if not os.path.exists(DEFAULT_MODEL_PATH) or not os.path.exists('class_names.json'):
         return None
     return CropDiseasePredictor()
 
@@ -53,10 +53,11 @@ predictor = load_predictor()
 
 # App Header
 st.title("🌿 CropSense AI — Plant Disease Diagnostic Hub")
-st.caption("Powered by EfficientNetV2-S (38 Botanical Classes) | Grad-CAM Explainable AI | Real-Time Agronomic Remedies")
+MODEL_NAMES = {"baseline": "EfficientNetV2-S", "cbam": "EfficientNetV2-S + CBAM", "msaf": "EfficientNetV2-MSAF"}
+st.caption(f"Powered by {MODEL_NAMES[DEFAULT_ARCH]} (38 Botanical Classes) | Grad-CAM Explainable AI | Real-Time Agronomic Remedies")
 
 if predictor is None:
-    st.error("Model checkpoints or class mappings not found. Please verify models/best_model.pth exists.")
+    st.error(f"Model checkpoints or class mappings not found. Please verify {DEFAULT_MODEL_PATH} exists.")
     st.stop()
 
 # Input Selection Tabs
@@ -167,20 +168,23 @@ if input_image is not None:
             st.markdown("---")
             
             # Quantitative Disease Severity Staging Section
-            st.subheader("📏 Quantitative Disease Severity Staging (Infected Leaf Area)")
+            st.subheader("📏 Estimated Disease Severity (Infected Leaf Area)")
             sev = diagnosis.get('severity')
-            if sev and not sev.get('is_healthy', False):
+            if sev and not sev.get('available', True):
+                st.info("Severity could not be estimated for this image (no attention map available). Follow the treatment plan below.")
+            elif sev and not sev.get('is_healthy', False):
                 col_s1, col_s2, col_s3 = st.columns([1, 1, 2])
                 with col_s1:
                     st.metric(label="Infected Surface Area", value=f"{sev['severity_pct']}%")
                 with col_s2:
-                    st.metric(label="Agronomic Severity Stage", value=f"Stage {sev['stage_number']}")
+                    st.metric(label="Estimated Severity Stage", value=f"Stage {sev['stage_number']}")
                 with col_s3:
                     st.write(f"**Classification:** {sev['stage_name']}")
                     st.write(f"**Epidemiological Risk:** {sev['risk_level']}")
                 
                 st.progress(min(1.0, max(0.0, sev['severity_pct'] / 100.0)), text=f"Lesion Surface Coverage: {sev['severity_pct']}% of leaf tissue")
                 st.warning(f"**🔬 Staging Action Plan:** {sev['action_plan']}")
+                st.caption("Severity is an estimate from Grad-CAM attention inside the segmented leaf, not a lab measurement. Confirm with a local agronomist before chemical treatment.")
             else:
                 st.success("### 🌿 0% Necrotic Lesion Area (Stage 0: Pristine Foliage)\nNo active pathological lesions or chlorotic spread detected.")
 
@@ -212,7 +216,8 @@ if input_image is not None:
                 pdf_bytes = generate_pdf_report(
                     diagnosis['original_image'],
                     diagnosis['gradcam_image'],
-                    diagnosis
+                    diagnosis,
+                    model_name=MODEL_NAMES[DEFAULT_ARCH]
                 )
                 
             file_name = f"CropSense_Report_{treatment['crop']}_{treatment['disease'].replace(' ', '_')}.pdf"

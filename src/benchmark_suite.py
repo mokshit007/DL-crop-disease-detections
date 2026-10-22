@@ -8,25 +8,7 @@ from PIL import Image, ImageFilter
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.model import get_model
-from src.attention import CBAM
-
-class EfficientNetV2_CBAM(nn.Module):
-    def __init__(self, num_classes=38):
-        super().__init__()
-        base = get_model(num_classes)
-        self.features = base.features
-        self.cbam = CBAM(in_channels=1280, reduction_ratio=16, kernel_size=7)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.classifier = base.classifier
-
-    def forward(self, x):
-        x = self.features(x)
-        x = self.cbam(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
-        return x
+from src.model import get_model, EfficientNetV2_CBAM
 
 def measure_latency(model, device, num_runs=50, input_size=(1, 3, 224, 224)):
     model = model.to(device).eval()
@@ -67,8 +49,8 @@ def profile_models(num_classes=38):
     mobilenet = models.mobilenet_v3_large()
     mobilenet.classifier[3] = nn.Linear(mobilenet.classifier[3].in_features, num_classes)
     
-    effnet_base = get_model(num_classes)
-    effnet_cbam = EfficientNetV2_CBAM(num_classes)
+    effnet_base = get_model(num_classes, pretrained=False)
+    effnet_cbam = EfficientNetV2_CBAM(num_classes, pretrained=False)
     
     candidates = [
         ("ResNet-50", resnet50, "4.12 G"),
@@ -94,7 +76,8 @@ def profile_models(num_classes=38):
             "gpu_latency_ms": round(gpu_lat, 2) if gpu_lat else "N/A",
             "cpu_latency_ms": round(cpu_lat, 2)
         })
-        print(f"[{name}] Params: {total_p/1e6:.2f}M | Size: {model_mb:.1f}MB | GPU: {gpu_lat:.2f}ms | CPU: {cpu_lat:.2f}ms")
+        gpu_str = f"{gpu_lat:.2f}ms" if gpu_lat else "N/A"
+        print(f"[{name}] Params: {total_p/1e6:.2f}M | Size: {model_mb:.1f}MB | GPU: {gpu_str} | CPU: {cpu_lat:.2f}ms")
         
     return results
 
@@ -104,9 +87,9 @@ def run_robustness_stress_test(test_dir="data/processed/test", max_samples=400):
     
     # Load our trained model
     class_names = json.load(open('class_names.json'))
-    model = get_model(len(class_names)).to(device)
+    model = get_model(len(class_names), pretrained=False).to(device)
     if os.path.exists('models/best_model.pth'):
-        model.load_state_dict(torch.load('models/best_model.pth', map_location=device))
+        model.load_state_dict(torch.load('models/best_model.pth', map_location=device, weights_only=True))
     model.eval()
     
     base_transform = transforms.Compose([
@@ -164,8 +147,8 @@ def run_robustness_stress_test(test_dir="data/processed/test", max_samples=400):
                     if pred == label_idx:
                         correct += 1
                     total += 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"Skipped {fpath}: {e}")
         acc = (correct / total) * 100.0 if total > 0 else 0
         robustness_results[cond_name] = round(acc, 2)
         print(f"Condition: {cond_name} -> Accuracy: {acc:.2f}% ({correct}/{total})")
@@ -179,11 +162,13 @@ def generate_visual_artifacts(profile_data, robustness_data):
     summary = {
         "model_benchmarks": profile_data,
         "robustness_stress_test": robustness_data,
-        "literature_accuracy_comparison": {
-            "ResNet-50 (Standard Benchmark)": "97.4%",
-            "MobileNetV3-Large (Mobile Baseline)": "96.8%",
-            "EfficientNetV2-S (Our Baseline)": "99.94%",
-            "EfficientNetV2-CBAM (Our Proposed)": "99.94%"
+        # Only EfficientNetV2-S was trained in this project; the other figures are reference values,
+        # not results measured on our split.
+        "accuracy_comparison": {
+            "ResNet-50": "97.4% (reference value, not trained here)",
+            "MobileNetV3-Large": "96.8% (reference value, not trained here)",
+            "EfficientNetV2-S (Our Baseline)": "99.94% val (measured)",
+            "EfficientNetV2-CBAM (Our Proposed)": "not trained yet (run: python -m src.train --cbam)"
         }
     }
     with open('results/comprehensive_benchmarks.json', 'w') as f:

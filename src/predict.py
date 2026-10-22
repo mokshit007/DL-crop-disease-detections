@@ -11,15 +11,20 @@ from src.treatments import get_treatment_details
 from src.gradcam import GradCAM
 from src.severity import SeverityEngine
 
+# Checkpoint served by the app and the architecture it was trained with (see src/model.py)
+DEFAULT_MODEL_PATH = 'models/best_model.pth'
+DEFAULT_ARCH = 'baseline'
+
 class CropDiseasePredictor:
-    def __init__(self, model_path='models/best_model.pth', class_names_path='class_names.json'):
+    def __init__(self, model_path=DEFAULT_MODEL_PATH, class_names_path='class_names.json', arch=DEFAULT_ARCH):
+        self.arch = arch
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         with open(class_names_path, 'r') as f:
             self.class_names = json.load(f)
             
-        self.model = get_model(len(self.class_names)).to(self.device)
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        self.model = get_model(len(self.class_names), pretrained=False, arch=arch).to(self.device)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
         self.model.eval()
         
         # Initialize Grad-CAM
@@ -123,10 +128,19 @@ class CropDiseasePredictor:
         tensor = self.transform(pil_image).unsqueeze(0).to(self.device)
         tensor.requires_grad = True
         
-        # Model forward pass
-        outputs = self.model(tensor)
+        # Single forward/backward pass: Grad-CAM returns the logits it computed, so the
+        # classification and the heatmap always come from the same forward pass.
+        cam_map = None
+        try:
+            cam_map, _, outputs = self.gradcam.generate_heatmap(tensor)
+            gradcam_image = self.gradcam.overlay_heatmap(pil_image, cam_map, alpha=0.45)
+        except Exception as e:
+            print(f"Grad-CAM generation error: {e}")
+            with torch.no_grad():
+                outputs = self.model(tensor)
+            gradcam_image = pil_image
+            
         probs = F.softmax(outputs, dim=1)[0]
-        
         top_probs, top_indices = torch.topk(probs, 3)
         
         top_predictions = []
@@ -140,33 +154,16 @@ class CropDiseasePredictor:
             })
             
         best_class = top_predictions[0]['class']
-        best_idx = top_indices[0].item()
-        
-        # Generate Grad-CAM attention heatmap
-        try:
-            cam_map, _ = self.gradcam.generate_heatmap(tensor, target_class_idx=best_idx)
-            gradcam_image = self.gradcam.overlay_heatmap(pil_image, cam_map, alpha=0.45)
-        except Exception as e:
-            print(f"Grad-CAM generation error: {e}")
-            gradcam_image = pil_image
             
-        # Quantitative Disease Severity Staging (% Leaf Surface Area)
-        try:
-            severity_info = SeverityEngine.calculate_severity(pil_image, cam_map, best_class)
-        except Exception as e:
-            print(f"Severity calculation error: {e}")
-            severity_info = {
-                "is_healthy": "healthy" in best_class.lower(),
-                "severity_pct": 0.0,
-                "stage_number": 0,
-                "stage_name": "Stage 0: Unspecified",
-                "stage_badge": "N/A",
-                "risk_level": "Undetermined",
-                "action_plan": "Follow standard treatment guidelines.",
-                "color_hex": "#10B981",
-                "leaf_pixels": 0,
-                "lesion_pixels": 0
-            }
+        # Lesion-area severity estimate (% leaf surface area); needs a valid Grad-CAM map
+        severity_info = None
+        if cam_map is not None:
+            try:
+                severity_info = SeverityEngine.calculate_severity(pil_image, cam_map, best_class)
+            except Exception as e:
+                print(f"Severity calculation error: {e}")
+        if severity_info is None:
+            severity_info = SeverityEngine.unavailable(best_class)
 
         # Get structured treatment data
         treatment_info = get_treatment_details(best_class)

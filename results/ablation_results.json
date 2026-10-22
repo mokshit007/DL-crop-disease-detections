@@ -1,0 +1,115 @@
+{
+    "test_images": 8889,
+    "runs": {
+        "baseline": {
+            "label": "EfficientNetV2-S (baseline)",
+            "params": 20226166,
+            "clean_acc": 99.62,
+            "clean_macro_f1": 99.61,
+            "ece": 10.57,
+            "corruptions": {
+                "Gaussian blur": 82.56,
+                "Motion blur": 54.45,
+                "Sensor noise": 80.66,
+                "Low light": 90.03,
+                "JPEG (q=10)": 86.65,
+                "Overexposure": 98.85
+            },
+            "mCA": 82.2,
+            "field_acc": 75.0,
+            "field_true_class_conf": 71.1,
+            "field_photos": 8,
+            "gpu_latency_ms": 15.56,
+            "cpu_latency_ms": 81.7,
+            "best_val_acc": 99.64
+        },
+        "cbam": {
+            "label": "EfficientNetV2-S + CBAM",
+            "params": 20431064,
+            "clean_acc": 99.51,
+            "clean_macro_f1": 99.51,
+            "ece": 10.17,
+            "corruptions": {
+                "Gaussian blur": 83.71,
+                "Motion blur": 62.95,
+                "Sensor noise": 78.21,
+                "Low light": 89.97,
+                "JPEG (q=10)": 85.2,
+                "Overexposure": 98.47
+            },
+            "mCA": 83.08,
+            "field_acc": 100.0,
+            "field_true_class_conf": 83.3,
+            "field_photos": 8,
+            "gpu_latency_ms": 16.34,
+            "cpu_latency_ms": 78.9,
+            "best_val_acc": 99.71
+        },
+        "msaf": {
+            "label": "EfficientNetV2-MSAF (proposed)",
+            "params": 20447007,
+            "clean_acc": 99.51,
+            "clean_macro_f1": 99.51,
+            "ece": 5.14,
+            "corruptions": {
+                "Gaussian blur": 81.64,
+                "Motion blur": 50.13,
+                "Sensor noise": 85.44,
+                "Low light": 94.35,
+                "JPEG (q=10)": 87.82,
+                "Overexposure": 98.59
+            },
+            "mCA": 83.0,
+            "field_acc": 100.0,
+            "field_true_class_conf": 80.1,
+            "field_photos": 8,
+            "gpu_latency_ms": 17.31,
+            "cpu_latency_ms": 89.6,
+            "best_val_acc": 99.69
+        },
+        "baseline_field": {
+            "label": "EfficientNetV2-S + field aug.",
+            "params": 20226166,
+            "clean_acc": 99.58,
+            "clean_macro_f1": 99.57,
+            "ece": 10.56,
+            "corruptions": {
+                "Gaussian blur": 99.1,
+                "Motion blur": 86.31,
+                "Sensor noise": 99.43,
+                "Low light": 96.39,
+                "JPEG (q=10)": 94.14,
+                "Overexposure": 98.67
+            },
+            "mCA": 95.67,
+            "field_acc": 75.0,
+            "field_true_class_conf": 62.8,
+            "field_photos": 8,
+            "gpu_latency_ms": 22.96,
+            "cpu_latency_ms": 98.9,
+            "best_val_acc": 99.6
+        },
+        "msaf_field": {
+            "label": "EfficientNetV2-MSAF + field aug.",
+            "params": 20447007,
+            "clean_acc": 99.56,
+            "clean_macro_f1": 99.55,
+            "ece": 5.45,
+            "corruptions": {
+                "Gaussian blur": 99.17,
+                "Motion blur": 81.85,
+                "Sensor noise": 99.37,
+                "Low light": 96.79,
+                "JPEG (q=10)": 93.63,
+                "Overexposure": 98.2
+            },
+            "mCA": 94.83,
+            "field_acc": 100.0,
+            "field_true_class_conf": 75.9,
+            "field_photos": 8,
+            "gpu_latency_ms": 23.04,
+            "cpu_latency_ms": 101.0,
+            "best_val_acc": 99.67
+        }
+    }
+}
