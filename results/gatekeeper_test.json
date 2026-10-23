@@ -1,0 +1,59 @@
+{
+  "model": "models/best_model.pth (EfficientNetV2-S, deployed)",
+  "tests": [
+    {
+      "image": "Text document",
+      "pipeline_valid": false,
+      "pipeline_code": "non_plant",
+      "pipeline_prediction": null,
+      "pipeline_confidence": null,
+      "bare_classifier_prediction": "Corn_(maize)___healthy",
+      "bare_classifier_confidence": 81.2
+    },
+    {
+      "image": "App screenshot",
+      "pipeline_valid": false,
+      "pipeline_code": "non_plant",
+      "pipeline_prediction": null,
+      "pipeline_confidence": null,
+      "bare_classifier_prediction": "Apple___Black_rot",
+      "bare_classifier_confidence": 37.2
+    },
+    {
+      "image": "Blank grey surface",
+      "pipeline_valid": false,
+      "pipeline_code": "non_plant",
+      "pipeline_prediction": null,
+      "pipeline_confidence": null,
+      "bare_classifier_prediction": "Peach___healthy",
+      "bare_classifier_confidence": 14.9
+    },
+    {
+      "image": "Random noise",
+      "pipeline_valid": true,
+      "pipeline_code": null,
+      "pipeline_prediction": "Tomato___Tomato_mosaic_virus",
+      "pipeline_confidence": 18.3,
+      "bare_classifier_prediction": "Tomato___Tomato_mosaic_virus",
+      "bare_classifier_confidence": 18.3
+    },
+    {
+      "image": "Blue sky",
+      "pipeline_valid": false,
+      "pipeline_code": "non_plant",
+      "pipeline_prediction": null,
+      "pipeline_confidence": null,
+      "bare_classifier_prediction": "Soybean___healthy",
+      "bare_classifier_confidence": 69.9
+    },
+    {
+      "image": "Four-leaf collage",
+      "pipeline_valid": false,
+      "pipeline_code": "multiple_leaves",
+      "pipeline_prediction": null,
+      "pipeline_confidence": null,
+      "bare_classifier_prediction": "Pepper,_bell___healthy",
+      "bare_classifier_confidence": 49.3
+    }
+  ]
+}
