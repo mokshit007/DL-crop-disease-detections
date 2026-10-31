@@ -1,0 +1,23 @@
+{
+  "baseline": {
+    "params": 20226166,
+    "gmacs": 2.849,
+    "cpu_latency_ms": 56.0,
+    "gpu_latency_ms": 14.63,
+    "cpu_threads": 4
+  },
+  "cbam": {
+    "params": 20431064,
+    "gmacs": 2.849,
+    "cpu_latency_ms": 58.0,
+    "gpu_latency_ms": 15.02,
+    "cpu_threads": 4
+  },
+  "msaf": {
+    "params": 20447007,
+    "gmacs": 2.849,
+    "cpu_latency_ms": 65.8,
+    "gpu_latency_ms": 18.68,
+    "cpu_threads": 4
+  }
+}

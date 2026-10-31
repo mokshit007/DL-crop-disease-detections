@@ -1,0 +1,22 @@
+test 32/8889  80s
+test 832/8889  140s
+test 1632/8889  201s
+test 2432/8889  263s
+test 3232/8889  326s
+test 4032/8889  389s
+test 4832/8889  453s
+test 5632/8889  516s
+test 6432/8889  580s
+test 7232/8889  643s
+test 8032/8889  707s
+test 8832/8889  771s
+val done  941s
+baseline        clean acc 99.62% (reported 99.62%)
+cbam            clean acc 99.51% (reported 99.51%)
+msaf            clean acc 99.51% (reported 99.51%)
+baseline_field  clean acc 99.58% (reported 99.58%)
+msaf_field      clean acc 99.56% (reported 99.56%)
+baseline {'params': 20226166, 'gmacs': 2.849, 'cpu_latency_ms': 93.2, 'gpu_latency_ms': 31.5}
+cbam {'params': 20431064, 'gmacs': 2.849, 'cpu_latency_ms': 222.1, 'gpu_latency_ms': 31.04}
+msaf {'params': 20447007, 'gmacs': 2.849, 'cpu_latency_ms': 217.2, 'gpu_latency_ms': 36.14}
+done in 980s
