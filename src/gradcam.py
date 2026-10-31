@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 import matplotlib
 
 class GradCAM:
@@ -105,9 +105,12 @@ class GradCAM:
 
         return cam, target_class_idx, logits
 
-    def overlay_heatmap(self, original_image: Image.Image, cam: np.ndarray, alpha=0.45, colormap='jet'):
+    def overlay_heatmap(self, original_image: Image.Image, cam: np.ndarray, alpha=0.45, colormap='jet',
+                        leaf_mask=None, lesion_mask=None):
         """
         Overlays the Grad-CAM heatmap onto the original PIL image.
+        leaf_mask / lesion_mask (bool, image size, optional): heat outside the leaf is removed, and inside it
+        the coarse map is concentrated onto the detected lesion pixels, so hot colours sit on the spots.
         """
         orig_w, orig_h = original_image.size
 
@@ -115,6 +118,19 @@ class GradCAM:
         cam_pil = Image.fromarray((cam * 255).astype(np.uint8))
         cam_resized = cam_pil.resize((orig_w, orig_h), resample=Image.Resampling.BILINEAR)
         cam_arr = np.array(cam_resized) / 255.0
+
+        if leaf_mask is not None:
+            if lesion_mask is not None and lesion_mask.any():
+                # Soften the lesion mask slightly so spots read as warm blobs rather than hard pixels
+                sigma = max(1.0, min(orig_w, orig_h) / 300)
+                guide = np.array(Image.fromarray(lesion_mask.astype(np.uint8) * 255)
+                                 .filter(ImageFilter.GaussianBlur(sigma))) / 255.0
+                guide = np.clip(guide * 1.5, 0, 1)
+                cam_arr = cam_arr * (0.15 + 0.85 * guide)
+            cam_arr = cam_arr * leaf_mask
+            if cam_arr.max() > 1e-8:
+                # gamma < 1 lifts lesions in moderately attended regions so they stay visible
+                cam_arr = (cam_arr / cam_arr.max()) ** 0.6
 
         # Apply colormap (matplotlib.cm.get_cmap is removed in Matplotlib 3.11)
         cmap = matplotlib.colormaps[colormap]

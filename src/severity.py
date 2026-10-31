@@ -2,16 +2,18 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from src.lesions import lesion_map
+
 class SeverityEngine:
     """
     Automated Quantitative Disease Severity Staging Engine:
-    Combines botanical leaf contour segmentation with Grad-CAM feature attention
-    to estimate the percentage of infected leaf surface area and map it to a
-    4-stage scale (<10%, 10-25%, 25-50%, >50%).
+    Segments the main leaf and its visible lesions (src/lesions.py) to estimate
+    the percentage of infected leaf surface area and map it to a 4-stage scale
+    (<10%, 10-25%, 25-50%, >50%).
 
-    Note: this is a heuristic proxy. Grad-CAM marks regions that drove the
-    classification, not a pixel-accurate lesion segmentation, and the stage
-    thresholds are project-defined (not an official USDA/FAO standard).
+    Note: this is a heuristic proxy. Lesions are found by colour contrast, not a
+    trained segmentation model, and the stage thresholds are project-defined
+    (not an official USDA/FAO standard).
     """
 
     @staticmethod
@@ -33,6 +35,7 @@ class SeverityEngine:
     
     @staticmethod
     def calculate_severity(pil_image: Image.Image, cam_heatmap: np.ndarray, predicted_class: str):
+        # cam_heatmap is kept for API compatibility; severity now comes from the pixel-level lesion map
         """
         Calculates:
         - Total Leaf Pixel Area
@@ -57,48 +60,11 @@ class SeverityEngine:
                 "lesion_pixels": 0
             }
 
-        img = np.array(pil_image.convert('RGB'))
-        h, w = img.shape[:2]
-        total_pixels = h * w
-        
-        # 1. Botanical Leaf Segmentation
-        hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-        h_channel, s_channel, v_channel = hsv[:, :, 0], hsv[:, :, 1], hsv[:, :, 2]
-        
-        green_mask = (h_channel >= 25) & (h_channel <= 95) & (s_channel >= 25) & (v_channel >= 25)
-        yellow_rust_mask = (h_channel >= 10) & (h_channel < 25) & (s_channel >= 20) & (v_channel >= 25)
-        brown_mask = ((h_channel < 10) | (h_channel > 170)) & (s_channel >= 18) & (v_channel >= 18) & (v_channel <= 190)
-        
-        leaf_mask = (green_mask | yellow_rust_mask | brown_mask).astype(np.uint8) * 255
-        
-        # Morphological closing to unify leaf surface
-        k_size = max(5, int(min(h, w) * 0.025))
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k_size, k_size))
-        cleaned_leaf_mask = cv2.morphologyEx(leaf_mask, cv2.MORPH_CLOSE, kernel)
-        
-        leaf_pixel_count = int(np.sum(cleaned_leaf_mask > 0))
-        if leaf_pixel_count < 100:
-            leaf_pixel_count = total_pixels
-            cleaned_leaf_mask = np.ones((h, w), dtype=np.uint8) * 255
-
-        # 2. Resize Grad-CAM to exact original image dimensions
-        cam_resized = cv2.resize(cam_heatmap, (w, h), interpolation=cv2.INTER_LINEAR)
-        
-        # Mask CAM strictly within the leaf contour
-        cam_in_leaf = cam_resized * (cleaned_leaf_mask > 0).astype(np.float32)
-        
-        # 3. Active Lesion Segmentation (Adaptive High-Activation Thresholding)
-        # In Grad-CAM, values >= 0.45 inside the leaf indicate active pathological features
-        lesion_mask = (cam_in_leaf >= 0.45).astype(np.uint8) * 255
-        
-        # Optional: remove tiny speckle noise
-        lesion_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        lesion_mask = cv2.morphologyEx(lesion_mask, cv2.MORPH_OPEN, lesion_kernel)
-        
-        lesion_pixel_count = int(np.sum(lesion_mask > 0))
-        
-        # 4. Severity Index Percentage
-        severity_pct = round((lesion_pixel_count / max(1, leaf_pixel_count)) * 100.0, 1)
+        # Leaf segmentation + pixel-level lesion detection (src/lesions.py)
+        leaf_mask, lesion_bool, severity_pct = lesion_map(pil_image)
+        leaf_pixel_count = int(leaf_mask.sum())
+        lesion_pixel_count = int(lesion_bool.sum())
+        lesion_mask = lesion_bool.astype(np.uint8) * 255
         severity_pct = min(100.0, severity_pct)
         
         # 5. Staging & Agronomic Prescription Mapping
@@ -158,5 +124,6 @@ class SeverityEngine:
             "color_hex": color,
             "leaf_pixels": leaf_pixel_count,
             "lesion_pixels": lesion_pixel_count,
-            "lesion_mask": lesion_mask
+            "lesion_mask": lesion_mask,
+            "leaf_mask": leaf_mask
         }
