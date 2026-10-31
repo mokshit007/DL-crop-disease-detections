@@ -9,6 +9,7 @@ import cv2
 from src.model import get_model
 from src.treatments import get_treatment_details
 from src.gradcam import GradCAM
+from src.lesions import lesion_map
 from src.severity import SeverityEngine
 
 # Checkpoint served by the app and the architecture it was trained with (see src/model.py)
@@ -133,7 +134,7 @@ class CropDiseasePredictor:
         cam_map = None
         try:
             cam_map, _, outputs = self.gradcam.generate_heatmap(tensor)
-            gradcam_image = self.gradcam.overlay_heatmap(pil_image, cam_map, alpha=0.45)
+            gradcam_image = None
         except Exception as e:
             print(f"Grad-CAM generation error: {e}")
             with torch.no_grad():
@@ -164,6 +165,21 @@ class CropDiseasePredictor:
                 print(f"Severity calculation error: {e}")
         if severity_info is None:
             severity_info = SeverityEngine.unavailable(best_class)
+
+        # Lesion-guided Grad-CAM: the coarse class map is sharpened with the pixel-level lesion mask,
+        # so heat lands on the spots the model attended to (cf. Guided Grad-CAM).
+        if cam_map is not None:
+            try:
+                if severity_info.get('leaf_mask') is not None:
+                    leaf, lesions = severity_info['leaf_mask'], severity_info['lesion_mask'] > 0
+                else:
+                    leaf, lesions, _ = lesion_map(pil_image)
+                    if 'healthy' in best_class.lower():
+                        lesions = None
+                gradcam_image = self.gradcam.overlay_heatmap(pil_image, cam_map, alpha=0.5, leaf_mask=leaf, lesion_mask=lesions)
+            except Exception as e:
+                print(f"Lesion-guided Grad-CAM error: {e}")
+                gradcam_image = self.gradcam.overlay_heatmap(pil_image, cam_map, alpha=0.45)
 
         # Get structured treatment data
         treatment_info = get_treatment_details(best_class)

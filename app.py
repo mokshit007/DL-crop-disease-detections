@@ -146,7 +146,7 @@ if input_image is not None:
                 with img_tabs[0]:
                     st.image(diagnosis['original_image'], caption="Uploaded Leaf Specimen", use_container_width=True)
                 with img_tabs[1]:
-                    st.image(diagnosis['gradcam_image'], caption="Grad-CAM Activation: Red & yellow zones pinpoint the exact leaf lesions and patterns the model analyzed.", use_container_width=True)
+                    st.image(diagnosis['gradcam_image'], caption="Lesion-guided Grad-CAM: red & yellow mark the spots inside the regions that drove the model's decision.", use_container_width=True)
                     
             with col_details:
                 st.subheader("📊 Diagnostic Verdict")
@@ -184,7 +184,7 @@ if input_image is not None:
                 
                 st.progress(min(1.0, max(0.0, sev['severity_pct'] / 100.0)), text=f"Lesion Surface Coverage: {sev['severity_pct']}% of leaf tissue")
                 st.warning(f"**🔬 Staging Action Plan:** {sev['action_plan']}")
-                st.caption("Severity is an estimate from Grad-CAM attention inside the segmented leaf, not a lab measurement. Confirm with a local agronomist before chemical treatment.")
+                st.caption("Severity is the share of the segmented leaf covered by detected lesions, a colour-based estimate, not a lab measurement. Confirm with a local agronomist before chemical treatment.")
             else:
                 st.success("### 🌿 0% Necrotic Lesion Area (Stage 0: Pristine Foliage)\nNo active pathological lesions or chlorotic spread detected.")
 
